@@ -223,10 +223,10 @@ method base-uri() {
     #~ The qualifiedName parameter is a String.
     #~ This function can raise an object that implements the DOMException interface.
 
-multi method elems() {
-    sub xmlChildElementCount(xmlDoc)           returns ulong      is native('xml2') { * }
-    xmlChildElementCount(self)
-}
+#multi method elems() {
+#    sub xmlChildElementCount(xmlDoc)           returns ulong      is native('xml2') { * }
+#    xmlChildElementCount(self)
+#}
 
 #method push($child) is aka<appendChild> {
 #    sub xmlAddChild(xmlDoc,  xmlNode)  returns XML::LibXML::Node  is native('xml2') { * }

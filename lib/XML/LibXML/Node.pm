@@ -18,20 +18,20 @@ my &_nc = &nativecast;
 role XML::LibXML::Nodish does XML::LibXML::C14N {
 
     method childNodes() is aka<list> {
-        my $elem = _nc(XML::LibXML::Node, self.children);
+        my $elem = self.children.getNode;
         my @ret;
         while $elem {
             push @ret, $elem; # unless $elem.type == XML_ATTRIBUTE_NODE;
-            $elem = _nc(XML::LibXML::Node, $elem.next);
+            $elem = $elem.next.getNode;
         }
         @ret
     }
 
     method AT-POS(Int $idx) {
-        my $elem = _nc(XML::LibXML::Node, self.children);
+        my $elem = self.children.getNode;
         my $i    = 0;
         while $elem && $i++ < $idx {
-            $elem = _nc(XML::LibXML::Node, $elem.next);
+            $elem = $elem.next.getNode;
         }
         $elem
     }
