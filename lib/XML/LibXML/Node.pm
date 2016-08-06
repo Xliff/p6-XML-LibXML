@@ -17,7 +17,10 @@ my &_nc = &nativecast;
 
 role XML::LibXML::Nodish does XML::LibXML::C14N {
 
-    method childNodes() is aka<list> {
+    method childNodes() 
+        is aka<list> 
+        is aka<getChildNodes>
+    {
         my $elem = self.children.getNode;
         my @ret;
         while $elem {

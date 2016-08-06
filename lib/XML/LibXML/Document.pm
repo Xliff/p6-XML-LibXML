@@ -563,10 +563,14 @@ method createEntityReference($pname) {
 }
 
 # cw: I can't tell the difference from the XS code.
-method validate is aka<is_valid> {
-    sub xmlValidateDocument(xmlValidCtxt is rw, xmlDoc) returns int32 is native('xml2') { * }
+method validate(*@p) is aka<is_valid> {
+    sub xmlValidateDocument(xmlValidCtxt is rw, xmlDoc)    returns int32 is native('xml2') { * }
+    sub xmlValidateDtd(xmlValidCtxt is rw, xmlDoc, xmlDtd) returns int32 is native('xml2') { * }
 
     my xmlValidCtxt $ctxt = xmlValidCtxt.new;
     $ctxt.reset;
-    xmlValidateDocument($ctxt, self);
+    @p.elems > 0 ??
+        xmlValidateDtd($ctxt, self, @p[0])
+        !!
+        xmlValidateDocument($ctxt, self);
 }

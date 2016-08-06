@@ -17,7 +17,7 @@ class XML::LibXML::DTD is xmlDtd is repr('CStruct') {
 	also does xmlNodeCasting;
 
 	multi method new($ext, $sys) {
-		sub xmlParseDTD(Str, Str) returns xmlDtd is native('xml2') { * }
+		sub xmlParseDTD(Str, Str) returns XML::LibXML::DTD is native('xml2') { * }
 
 		my $dtd = xmlParseDTD($ext, $sys);
 		die "Can't parse DTD" unless $dtd.defined;
@@ -27,7 +27,7 @@ class XML::LibXML::DTD is xmlDtd is repr('CStruct') {
 	}
 
 	multi method new($dummy = 0) {
-		xmlDtd.new;
+		_nc(XML::LibXML::DTD, xmlDtd.new);
 	}
 
 	method getBase {
@@ -112,12 +112,12 @@ class XML::LibXML::DTD is xmlDtd is repr('CStruct') {
 	}
 
 	method parse-string($str, $enc?) is aka<parse_string> {
-		sub xmlIOParseDTD(Pointer, xmlParserInputBufferPtr, int32)        returns xmlDtd                  is native('xml2') { * }
+		sub xmlIOParseDTD(Pointer, xmlParserInputBufferPtr, int32)        returns XML::LibXML::DTD        is native('xml2') { * }
 		sub xmlAllocParserInputBuffer(int32)                              returns xmlParserInputBufferPtr is native('xml2') { * }
 		sub xmlParserInputBufferPush(xmlParserInputBufferPtr, int32, Str) returns int32                   is native('xml2') { * }
 
 		my $myenc = $enc.defined ?? $enc !! Nil;
-		my $xml_enc = Str;
+		my $xml_enc = 0;
 		if $myenc.defined {
 			$xml_enc = xmlParseCharEncoding($enc);
 
@@ -129,9 +129,30 @@ class XML::LibXML::DTD is xmlDtd is repr('CStruct') {
 
 		xmlParserInputBufferPush($buffer, $str.chars, $str);
 		my $ret = xmlIOParseDTD(Pointer, $buffer, $xml_enc);
-		die "no DTD parsed!" unless $ret.defined && $ret ~~ xmlDtd;
+		die "no DTD parsed!" unless $ret.defined;
 
-		_nc(XML::LibXML::DTD, $ret);
+		$ret;
 	}
+
+	# cw: This is the original XML::LibXML::Node::toString() from the 
+	#     Perl5 version. 
+	method toString($format = 0, $useDomEncoding = Nil) {
+        my $buffer = xmlBufferCreate();
+
+        if $format == 0 {
+            xmlNodeDump($buffer, self.doc, self.getNode, 0, $format);
+        }
+        #else {
+        #    my $indent_var = xmlIndentTreeOutput;
+        #    xmlIndentTreeOutput = 1;
+        #    xmlNodeDump($buffer, self.doc, self.getNode, 0, $format);
+        #    xmlIndentTreeOutput = t_indent_var;
+        #}
+
+        my $ret = xmlBufferContent( $buffer );
+        xmlBufferFree($buffer);
+        warn "Failed to convert note to string" unless $ret.defined;
+        $ret;
+    }
 
 }
