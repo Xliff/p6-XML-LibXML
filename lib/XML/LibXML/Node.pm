@@ -38,7 +38,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         while $elem && $i++ < $idx {
             $elem = $elem.next.getNode;
         }
-        $elem
+        _nc(XML::LibXML::Node, $elem);
     }
 
     #~ method base-uri() {
@@ -207,11 +207,17 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
     method push($child) is aka<appendChild> {
         sub xmlAddChild(xmlNode, xmlNode)  returns XML::LibXML::Node  is native('xml2') { * }
-        xmlAddChild(self.getNode, $child.getNode);
+        my $ret = xmlAddChild(self.getNode, $child.getNode);
+
+        # cw: The call to domSetIntSubset may generate an error if
+        #     nqp::nativecallrefresh() is not called first.
+        nqp::nativecallrefresh($child);
 
         # cw: Set doc's internalSubset if appending a DTD node.
         DomSetIntSubset(self.doc, $child) 
             if $child.defined && $child.type == XML_DTD_NODE;
+
+        $ret;
     }
 
     # subclasses can override this if they have their own Str method.
@@ -235,7 +241,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
     }
 
     method parentNode() {
-        return self.parent;
+        return _nc(XML::LibXML::Node, self.parent);
     }
 
     method setNodeName(Str $n) {
@@ -245,7 +251,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         #xmlNodeSetName(self, $n);
 
         if testNodeName($n) {
-            xmlNodeSetName(self.getNode(), $n);        
+            xmlNodeSetName(self.getNode, $n);        
         } 
         else {
             die "Bad name";
@@ -312,7 +318,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
                     my $attr_p = $prefix.subst(/s/, '');
                     if $attr_p.chars {
                         $ns = xmlNewNs(
-                            self.getNode(), $attr_ns, $attr_p
+                            self.getNode, $attr_ns, $attr_p
                         );
                     } 
                     else {
@@ -327,11 +333,11 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             return            
         }
 
-        xmlSetNsProp(self.getNode(), $ns, $localname, $val);
+        xmlSetNsProp(self.getNode, $ns, $localname, $val);
     }
 
     method hasAttribute($a) {
-        my $ret = domGetAttrNode(self.getNode(), $a);
+        my $ret = domGetAttrNode(self.getNode, $a);
         
         # cw: If we want to use xmlFree() then we might need to adopt this
         #     pattern for all unused values we get from libxml2
@@ -350,7 +356,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
         my $attr = _nc(
             xmlAttr,
-            xmlHasNsProp(self.getNode(), $name, $ns)
+            xmlHasNsProp(self.getNode, $name, $ns)
         );
 
         return $attr.defined && $attr.type == XML_ATTRIBUTE_NODE;
@@ -364,7 +370,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
         my $ret;
         unless (
-            $ret = xmlGetNoNsProp(self.getNode(), $name)
+            $ret = xmlGetNoNsProp(self.getNode, $name)
         ) {
             my ($prefix, $localname) = $a.split(':');
 
@@ -376,7 +382,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
                 my $ns = xmlSearchNs(self.doc, self, $prefix);
                 if $ns {
                     $ret = xmlGetNsProp(
-                        self.getNode(), $localname, $ns.uri
+                        self.getNode, $localname, $ns.uri
                     );
                 }
             }
@@ -478,21 +484,15 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
         my $ret;
         $ret = domGetAttrNode(
-            self.getNode(), $an.name
+            self.getNode, $an.name
         );
         if $ret {
             return unless $ret !=:= $an;
             
-            xmlReplaceNode(
-                _nc(xmlNode, $ret), 
-                _nc(xmlNode, $an)
-            );
+            xmlReplaceNode($ret.getNode, $an.getNode);
         } 
         else {
-            xmlAddChild(
-                self.getNodePtr, 
-                $an.getAttrPtr
-            );
+            xmlAddChild(self.getNodePtr, $an.getAttrPtr);
         }
 
         # cw: ????
@@ -505,7 +505,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
         # cw: ?????
         #PmmFixOwner( SvPROXYNODE(RETVAL), NULL );
-        nativecast(XML::LibXML::Node, $ret);
+        $retVal;
     }
 
     #method setAttributeNodeNS(xmlAttr $an!) {
@@ -534,10 +534,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             xmlReplaceNode($ret, $an);
         } 
         else {
-            xmlAddChild(
-                self.getNodePtr, 
-                $an.getNodePtr
-            );
+            xmlAddChild(self.getNodePtr, $an.getNodePtr);
             xmlReconciliateNs(self.doc, self);
         }
 
@@ -546,7 +543,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         #    PmmFixOwner( SvPROXYNODE(attr_node), PmmPROXYNODE(self) );
         #}
 
-        return $ret;
+        $ret;
     }
 
     method removeAttributeNode(xmlAttr $an!) {
@@ -561,13 +558,13 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             &&
             $an.parent !=:= self;
 
-        xmlUnlinkNode(_nc(xmlNodePtr, $an));
+        xmlUnlinkNode($an.getNodePtr);
 
         # cw: ????
         # $ret = PmmNodeToSv($ret_p, NUL)
         # PmmFixOwner( SvPROXYNODE($ret), NULL)
 
-        return $an;
+        $an;
     }
 
     method removeAttributeNS($_nsUri, $_name) {
@@ -603,31 +600,31 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             if ($ns.defined && $ns.uri.defined && $ns.uri.chars) {
                 $ret = 0;
             } elsif $flag {
-                xmlSetNs(self.getNode(), xmlNs);
+                xmlSetNs(self.getNode, xmlNs);
                 $ret = 1;
             } 
             else {
                 $ret = 0;
             }
         } elsif $flag {
-            $ns = xmlSearchNs(self.doc, self.getNode(), $_prefix);
+            $ns = xmlSearchNs(self.doc, self.getNode, $_prefix);
 
             if ($ns.defined) {
                 if $ns.uri eq $_uri {
                     $ret = 1;
                 } 
                 else {
-                    $ns = xmlNewNs(self.getNode(), $_uri, $_prefix);
+                    $ns = xmlNewNs(self.getNode, $_uri, $_prefix);
                 }
             } 
             else {
-                $ns = xmlNewNs(self.getNode(), $_uri, $_prefix);
+                $ns = xmlNewNs(self.getNode, $_uri, $_prefix);
             }
             
             $ret = $ns.defined;
         }
 
-        xmlSetNs(self.getNode(), $ns) if $flag && $ns.defined;
+        xmlSetNs(self.getNode, $ns) if $flag && $ns.defined;
 
         $ret;
     }
@@ -636,7 +633,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         is aka<setValue>
         is aka<_setData>
     {
-        domSetNodeValue(self.getNode(), $value);
+        domSetNodeValue(self.getNode, $value);
     }
 
     method nodeValue() 
@@ -679,11 +676,11 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
     }
 
     method firstChild {
-        _nc(XML::LibXML::Node, self.children);
+        self.children.getNode;
     }
 
     method previousSibling {
-        _nc(XML::LibXML::Node, self.prev);
+        self.prev.getNode;
     }
 
     method hasAttributes {
