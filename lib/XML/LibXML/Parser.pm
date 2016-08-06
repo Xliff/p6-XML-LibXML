@@ -1,7 +1,5 @@
 use v6;
 
-use nqp;
-
 use NativeCall;
 use XML::LibXML::CStructs :types;
 
@@ -117,7 +115,8 @@ multi method parse-file(Str $s, :$flags = 0) {
         !!
         #xmlCtxtReadFile(self, $s, "UTF8", self.options)
         xmlCtxtReadFile(self, $s, Str, $myflags);
-    $ret.defined ?? $ret !! Nil;
+    die "Could not parse file!\n" unless $ret.defined;
+    $ret;
 }
 
 method parse-xml-chunk($_xml) {
@@ -132,29 +131,14 @@ method parse-xml-chunk($_xml) {
 
         $frag = domNewDocFragment(); 
         # cw: Also might want to make a helper function for this.
-        nqp::bindattr(
-            nqp::decont($frag),
-            xmlNode,
-            '$!children',
-            nqp::decont(nativecast(xmlNodePtr, $ret))
-        );
+        setObjAttr($frag, '$!children', $ret.getNodePtr);
         $end = $ret;
         while $end.next.defined {
-            $end.parent = nativecast(xmlNodePtr, $frag);
-            $end = nativecast(xmlNode, $end.next);
+            $end.parent = $frag.getNodePtr;
+            $end = $end.getNode.next;
         }
-        nqp::bindattr(
-            nqp::decont($end),
-            xmlNode,
-            '$!parent',
-            nqp::decont(nativecast(xmlNodePtr, $frag))
-        );
-        nqp::bindattr(
-            nqp::decont(nativecast(xmlNode, $frag)),
-            xmlNode,
-            '$!last',
-            nqp::decont(nativecast(xmlNodePtr, $end))
-        );
+        setObjAttr($end,  '$!parent', $frag.getNodePtr);
+        setObjAttr($frag, '$!last', $end.getNodePtr);
     }
     $frag;
 }

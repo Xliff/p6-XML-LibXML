@@ -24,7 +24,9 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         my $elem = self.children.getNode;
         my @ret;
         while $elem {
-            push @ret, $elem; # unless $elem.type == XML_ATTRIBUTE_NODE;
+            # cw: Should we attempt to cast to the right node type, 
+            #     or should the user be responsible for that?
+            push @ret, _nc(XML::LibXML::Node, $elem); # unless $elem.type == XML_ATTRIBUTE_NODE;
             $elem = $elem.next.getNode;
         }
         @ret
@@ -208,7 +210,8 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         xmlAddChild(self.getNode, $child.getNode);
 
         # cw: Set doc's internalSubset if appending a DTD node.
-        DomSetIntSubset(self.doc, $child) if $child.type == XML_DTD_NODE;
+        DomSetIntSubset(self.doc, $child) 
+            if $child.defined && $child.type == XML_DTD_NODE;
     }
 
     # subclasses can override this if they have their own Str method.
