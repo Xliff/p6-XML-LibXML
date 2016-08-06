@@ -676,11 +676,11 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
     }
 
     method firstChild {
-        self.children.getNode;
+        _nc(XML::LibXML::Node, self.children);
     }
 
     method previousSibling {
-        self.prev.getNode;
+        _nc(XML::LibXML::Node, self.prev);
     }
 
     method hasAttributes {

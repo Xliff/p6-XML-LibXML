@@ -45,7 +45,7 @@ class XML::LibXML::DTD is xmlDtd is repr('CStruct') {
 	}
 
 	# cw: Due to differences, we override from Nodish.
-	method type() {
+	method type is aka<nodeType> {
         xmlElementType(
     		nqp::p6box_i(
     			nqp::getattr_i(nqp::decont(self), xmlDtd, '$!type')
