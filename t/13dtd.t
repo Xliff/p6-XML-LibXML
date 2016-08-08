@@ -75,10 +75,13 @@ $dtdstr.=subst(/<[ \r \n ]>*$/, '', :g);
     # ---
     # this one is OK as it's well formed (no DTD)
 
+    # cw: -XXX- This file actually validates!
     dies-ok 
         { $parser.parse-file('example/article_bad.xml'); },
         'Parser threw an exception on bad xml';
     
+    # cw: -XXX- This file has subtle errors that should be caught 
+    #     yet libxml2 says it's valid.
     dies-ok 
         { $parser.parse-file('example/article_internal_bad.xml'); },
         'Parser threw an exception on another type of bad xml';

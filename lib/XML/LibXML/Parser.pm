@@ -115,7 +115,14 @@ multi method parse-file(Str $s, :$flags = 0) {
         !!
         #xmlCtxtReadFile(self, $s, "UTF8", self.options)
         xmlCtxtReadFile(self, $s, Str, $myflags);
+
     die "Could not parse file!\n" unless $ret.defined;
+    #say $ret;
+    say self.valid;
+    say self.errNo;
+    say $ret.children;
+    say $ret.localname;
+    say $ret.type;
     $ret;
 }
 
