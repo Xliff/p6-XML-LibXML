@@ -8,14 +8,18 @@
         "XML::LibXML"           : "lib/XML/LibXML.pm",
         "XML::LibXML::Attr"     : "lib/XML/LibXML/Attr.pm",
         "XML::LibXML::C14N"     : "lib/XML/LibXML/C14N.pm",
-        "XML::LibXML::Common"   : "lib/XML/LibXML/Common.pm",
         "XML::LibXML::CStructs" : "lib/XML/LibXML/CStructs.pm",
         "XML::LibXML::Document" : "lib/XML/LibXML/Document.pm",
+        "XML::LibXML::Dom"      : "lib/XML/LibXML/Dom.pm",
+        "XML::LibXML::DTD"      : "lib/XML/LibXML/Dtd.pm",
+        "XML::LibXML::Element"  : "lib/XML/LibXML/Element.pm",
         "XML::LibXML::Enums"    : "lib/XML/LibXML/Enums.pm",
         "XML::LibXML::Error"    : "lib/XML/LibXML/Error.pm",
         "XML::LibXML::Node"     : "lib/XML/LibXML/Node.pm",
         "XML::LibXML::Parser"   : "lib/XML/LibXML/Parser.pm",
-        "XML::LibXML::Subs"     : "lib/XML/LibXML/Subs.pm"
+        "XML::LibXML::Subs"     : "lib/XML/LibXML/Subs.pm",
+        "XML::LibXML::Text"     : "lib/XML/LibXML/Text.pm",
+        "XML::LibXML::XPath"    : "lib/XML/LibXML/XPath.pm"
     },
     "source-url"  : "git://github.com/FROGGS/p6-XML-LibXML.git"
 }
