@@ -35,11 +35,11 @@ sub setOptions($ctxt, $flags, $html) {
     unless $myflags +& XML_PARSE_DTDLOAD {
         # cw: unset bit op?
         $myflags = $myflags +& (
-            0xffffffff +^ 
+            0xffffffff +^
             (XML_PARSE_DTDVALID + XML_PARSE_DTDATTR + XML_PARSE_NOENT)
         );
         xmlKeepBlanksDefault($myflags +& XML_PARSE_NOBLANKS ?? 1 !! 0);
-        
+
         # cw: EXTERNAL ENTITY LOADER FUNC -- NYI
     }
 
@@ -56,21 +56,24 @@ method new(:$html = False, :$flags) {
             !! xmlNewParserCtxt();
 
     # This stops xml2 printing errors to stderr
-    xmlSetStructuredErrorFunc($self, -> OpaquePointer, OpaquePointer { });
+    xmlSetStructuredErrorFunc(
+      nativecast(Pointer, $self),
+      -> OpaquePointer, OpaquePointer { }
+    );
     if $flags.defined {
-        setOptions($self, $flags, $html);       
+        setOptions($self, $flags, $html);
     }
     $self;
 }
 
 method setOptions(Int $options) {
-    die "Invalid options specified {$options}" 
+    die "Invalid options specified {$options}"
         if $options > (+XML_PARSE_BIG_LINES * 2 - 1);
     &setOptions(self, $options, self.html);
 }
 
 method parse(Str:D $str, Str :$uri, :$_flags) {
-    my $flags = $_flags.defined ?? $_flags 
+    my $flags = $_flags.defined ?? $_flags
         !! self.html == 1 ?? HTML_PARSE_RECOVER + HTML_PARSE_NOBLANKS !! 0;
 
     my $doc = self.html == 1
@@ -80,7 +83,7 @@ method parse(Str:D $str, Str :$uri, :$_flags) {
     $doc
 }
 
-# cw: This method is to fulfil testing requirements from 06elements. 
+# cw: This method is to fulfil testing requirements from 06elements.
 method parse-string($str, :$url, :$flags) {
     sub xmlReadDoc(Str, Str, Str, int32) returns xmlDoc is native('xml2') { * }
 
@@ -103,7 +106,7 @@ multi method parse-file(Str $s, :$flags = 0) {
     }
 
     # cw: Should we assume unicode, here or just use default?
-    # cw: What about defined options? -- For now we set blank, but that might 
+    # cw: What about defined options? -- For now we set blank, but that might
     #     come a-haunting in the future.
     my $myflags = $flags.defined ?? +$flags !! 0;
     self.html ??
@@ -124,7 +127,7 @@ method parse-xml-chunk($_xml) {
     if $ret.defined {
         my $end;
 
-        $frag = domNewDocFragment(); 
+        $frag = domNewDocFragment();
         # cw: Also might want to make a helper function for this.
         nqp::bindattr(
             nqp::decont($frag),
@@ -158,7 +161,7 @@ method parse-xml-chunk($_xml) {
     #~ say self.replaceEntities;
     #~ say xmlCtxtUseOptions(self, XML_PARSE_NOENT);
     #~ say self.replaceEntities;
-    
+
     #~ if (scalar(@_) and $_[0]) {
       #~ return $self->__parser_option(XML_PARSE_NOENT | XML_PARSE_DTDLOAD,1);
     #~ }

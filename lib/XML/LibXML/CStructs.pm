@@ -6,7 +6,7 @@ constant XML_XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
 constant XML_XMLNS_NS      = 'http://www.w3.org/2000/xmlns/';
 constant XML_XML_NS        = 'http://www.w3.org/XML/1998/namespace';
 
-my class CStruct is repr('CStruct') is export(:types) { }
+#my class CStruct is repr('CStruct') is export(:types) { }
 
 my class  xmlAttr                    is repr('CStruct')  { ... }
 my native xmlAttributeType           is repr('P6int') is Int is nativesize(32) is export(:types) { }
@@ -17,7 +17,7 @@ my class  xmlBuffer                  is repr('CStruct')  { ... }
 my native xmlBufferAllocationScheme  is repr('P6int') is Int is nativesize(32) is export(:types) { }
 my native xmlChar                    is repr('P6int') is Int is nativesize(8) is unsigned is export(:types) { }
 my class  xmlDictPtr                 is repr('CPointer') { }
-my class  xmlDtd                     is repr('CStruct')  is export(:types) { ... }  
+my class  xmlDtd                     is repr('CStruct')  is export(:types) { ... }
 my class  xmlDtdPtr                  is repr('CPointer') { }
 my class  xmlDoc                     is repr('CStruct')  is export(:types) { ... }
 my class  xmlDocPtr                  is repr('CPointer') is Pointer is export(:types) { }
@@ -28,8 +28,8 @@ my class  xmlHashTablePtr            is repr('CPointer') { }
 my class  xmlNode                    is repr('CStruct')  { ... }
 my class  xmlNodePtr                 is repr('CPointer') is Pointer is export(:types) { }
 my class  xmlNodeSet                 is repr('CStruct')  { ... }
-my class  xmlNs                      is repr('CStruct') is export(:types) { ... } 
-my class  xmlNsPtr                   is repr('CPointer') is Pointer is export(:types) { } 
+my class  xmlNs                      is repr('CStruct') is export(:types) { ... }
+my class  xmlNsPtr                   is repr('CPointer') is Pointer is export(:types) { }
 my class  xmlParserCtxt              is repr('CStruct')  { ... }
 my class  xmlParserInputPtr          is repr('CPointer') is Pointer { }
 my native xmlParserInputState        is repr('P6int') is Int is nativesize(32) is export(:types) { }

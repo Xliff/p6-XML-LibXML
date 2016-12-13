@@ -28,8 +28,21 @@ sub xmlNodeGetBase(xmlDoc, xmlDoc)           returns Str        is native('xml2'
 sub xmlNodeSetBase(xmlDoc, Str)                                 is native('xml2') is export { * }
 
 # Error handling
-sub xmlSetGenericErrorFunc(CStruct, &cb (OpaquePointer, OpaquePointer, CArray[OpaquePointer]))  is native('xml2')  is export { * }
-sub xmlSetStructuredErrorFunc(CStruct, &cb (OpaquePointer, OpaquePointer))                      is native('xml2')  is export { * }
+sub xmlSetGenericErrorFunc(
+  Pointer,
+  &cb (OpaquePointer, OpaquePointer, CArray[OpaquePointer])
+)
+  is native('xml2')
+  is export
+{ * }
+
+sub xmlSetStructuredErrorFunc(
+  Pointer,
+  &cb (OpaquePointer, OpaquePointer)
+)
+  is native('xml2')
+  is export
+{ * }
 
 # Namespaces
 sub xmlNewNs(xmlNode, Str, Str)              returns xmlNs      is native('xml2') is export { * }
