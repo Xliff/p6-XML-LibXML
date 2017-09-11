@@ -65,7 +65,7 @@ class XML::LibXML::Error is xmlError is repr('CStruct') {
     { * }
 
     method get-last($ctx, :$orig) {
-        my $err = xmlCtxtGetLastError($ctx);
+        my $err = xmlCtxtGetLastError(nativecast(OpaquePointer, $ctx));
         $err    = xmlGetLastError() unless $err;
         X::XML::LibXML::Parser.new( :text($err.message), :line($err.line), :char($err.int2), :$orig ) if $err;
     }

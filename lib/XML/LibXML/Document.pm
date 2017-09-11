@@ -16,16 +16,46 @@ multi trait_mod:<is>(Routine $r, :$aka!) { $r.package.^add_method($aka, $r) };
 
 unit class XML::LibXML::Document is xmlDoc is repr('CStruct') does XML::LibXML::Nodish;
 
-sub xmlNewDoc(Str)                          returns XML::LibXML::Document  is native('xml2') { * }
-sub xmlDocGetRootElement(xmlDoc)            returns XML::LibXML::Node      is native('xml2') { * }
-sub xmlDocSetRootElement(xmlDoc, xmlNode)   returns XML::LibXML::Node      is native('xml2') { * }
-sub xmlNewNode(xmlNs, Str)                  returns XML::LibXML::Node      is native('xml2') { * }
-sub xmlNewText(Str)                         returns XML::LibXML::Node      is native('xml2') { * }
-sub xmlNewDocComment(xmlDoc, Str)           returns XML::LibXML::Node      is native('xml2') { * }
-sub xmlNewCDataBlock(xmlDoc, Str, int32)    returns XML::LibXML::Node      is native('xml2') { * }
-sub xmlReplaceNode(xmlNode, xmlNode)        returns XML::LibXML::Node      is native('xml2') { * }
-sub xmlNewDocProp(xmlDoc, Str, Str)         returns XML::LibXML::Attr      is native('xml2') { * }
-sub xmlNewDocNode(xmlDoc, xmlNs, Str, Str)  returns XML::LibXML::Node      is native('xml2') { * }
+sub xmlNewDoc(Str)
+  returns XML::LibXML::Document
+  is native('xml2') { * }
+
+sub xmlDocGetRootElement(xmlDoc)
+  returns XML::LibXML::Node
+  is native('xml2') { * }
+
+sub xmlDocSetRootElement(xmlDoc, xmlNode)
+  returns XML::LibXML::Node
+  is native('xml2') { * }
+
+sub xmlNewNode(xmlNs, Str)
+  returns XML::LibXML::Node
+  is native('xml2')
+  { * }
+
+sub xmlNewText(Str)
+  returns XML::LibXML::Node
+  is native('xml2') { * }
+
+sub xmlNewDocComment(xmlDoc, Str)
+  returns XML::LibXML::Node
+  is native('xml2') { * }
+
+sub xmlNewCDataBlock(xmlDoc, Str, int32)
+  returns XML::LibXML::Node
+  is native('xml2') { * }
+
+sub xmlReplaceNode(xmlNode, xmlNode)
+  returns XML::LibXML::Node
+  is native('xml2') { * }
+
+sub xmlNewDocProp(xmlDoc, Str, Str)
+  returns XML::LibXML::Attr
+  is native('xml2') { * }
+
+sub xmlNewDocNode(xmlDoc, xmlNs, Str, Str)
+  returns XML::LibXML::Node
+  is native('xml2') { * }
 
 method process-xincludes {
     sub xmlXIncludeProcessFlags(xmlDoc, int32) returns int32 is native('xml2') { * }
@@ -46,8 +76,8 @@ method doctype is aka<type> {
     #~ This read-only property is an object that implements the DOMImplementation interface.
 
 #| This read-only property is an object that implements the Element interface.
-method documentElement 
-    is aka<root> 
+method documentElement
+    is aka<root>
     is aka<getDocumentElement>
 {
     Proxy.new(
@@ -101,7 +131,7 @@ method xmlStandalone is aka<standalone> {
             nqp::p6box_i(nqp::getattr_i(nqp::decont(self), xmlDoc, '$!standalone'))
         },
         STORE => -> $, int32 $new {
-            #~ self.standalone = 
+            #~ self.standalone =
             nqp::bindattr_i(nqp::decont(self), xmlDoc, '$!standalone', $new);
             $new
         }
@@ -235,7 +265,7 @@ method base-uri() {
         #~ self.list.grep({ !xmlIsBlankNode($_) })».Str.join
         #~ self.list.grep({ $_.type != XML_DTD_NODE && !xmlIsBlankNode($_) })».Str(:!format).join: ''
         #~ self.list».Str(:!format).join: ''
-            
+
     #~ }
 
     method gist(XML::LibXML::Document:D:) {
@@ -246,8 +276,6 @@ method base-uri() {
         xmlDocDumpFormatMemory(self, $result, $len, 1);
         $result[0]
     }
-
-
 
 method new(:$version = '1.0', :$encoding) {
     my $doc       = xmlNewDoc(~$version);
@@ -297,7 +325,7 @@ method createElementNS($_uri, $_name) {
         die "bad name";
         # cw: For .resume inside CATCH
         return;
-    } 
+    }
 
     self.new-elem-ns($_name, $_uri);
 }
@@ -395,7 +423,7 @@ method setDocumentElement($e) {
     my $oelem = xmlDocGetRootElement(self);
     if (!$oelem.defined || !$oelem._private.defined) {
         xmlDocSetRootElement(self, $elem);
-    } 
+    }
     else {
         my $docfrag = self.new-doc-fragment();
         xmlReplaceNode($oelem, $elem);

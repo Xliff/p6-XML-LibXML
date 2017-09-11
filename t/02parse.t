@@ -7,7 +7,9 @@ use Test;
 
 #~ use IO::File;
 
-use XML::LibXML::Common; #~ qw(:libxml);
+use XML::LibXML;                   #~ qw(:libxml);
+use XML::LibXML::CStructs :types; # cw: Because... scoped
+
 #~ use XML::LibXML::SAX;
 #~ use XML::LibXML::SAX::Builder;
 
@@ -134,24 +136,24 @@ test-good-and-bad-strings $parser, '1.1.1 DEFAULT VALUES';
 
 # 1.1.2 NO KEEP BLANKS
 
-$parser.keep-blanks = 0;
+$parser.keep-blanks: 0;
 test-good-and-bad-strings $parser, '1.1.2 NO KEEP BLANKS';
-$parser.keep-blanks = 1;
+$parser.keep-blanks: 1;
 
 # 1.1.3 EXPAND ENTITIES
 
-$parser.replace-entities = 0;
+$parser.replace-entities: 0;
 test-good-and-bad-strings $parser, '1.1.3 EXPAND ENTITIES';
-$parser.replace-entities = 1;
+$parser.replace-entities: 1;
 
 # 1.1.4 PEDANTIC
 
-$parser.pedantic = 1;
+$parser.pedantic: 1;
 test-good-and-bad-strings $parser, '1.1.4 PEDANTIC';
-$parser.pedantic = 0;
+$parser.pedantic: 0;
 
 {
-    $parser.keep-blanks = 1;
+    $parser.keep-blanks: 1;
     my $str  = "<a>    <b/> </a>";
     my $tstr = "<a><b/></a>";
     my $docA = $parser.parse($str);
@@ -198,7 +200,7 @@ my $badXInclude = '
 
 {
     #~ $parser.base-uri( "example/" );
-    $parser.keep-blanks = 0;
+    $parser.keep-blanks: 0;
     my $doc = $parser.parse( $goodXInclude );
     isa-ok($doc, 'XML::LibXML::Document');
     #~ $doc.uri = "examples/";
@@ -607,18 +609,21 @@ my $badXInclude = '
     #~ }
 #~ }
 
-{
+# cw: TODO- will need to revisit this test, since I do not know what the
+#     intended behavior was supposed to be, and source searching both this
+#     and the P5 version has not yielded definitive answers.
+#{
     # 6 VALIDATING PARSER
 
-    my $badstring = '<?xml version="1.0"?>' ~ "\n<A/>\n";
-    my $parser    = XML::LibXML.new;
+#    my $badstring = '<?xml version="1.0"?>' ~ "\n<A/>\n";
+#    my $parser    = XML::LibXML.new;
 
-    $parser.validate = 1;
-    my $doc;
-    $doc = $parser.parse($badstring);
+    #$parser.validate: 1;
+    #my $doc;
+    #$doc = $parser.parse($badstring);
     #~ isnt($@, '', "Failed to parse SIMPLE bad string");
     #~ my $ql;
-}
+#}
 
 {
     # 7 LINE NUMBERS
@@ -635,19 +640,19 @@ my $badXInclude = '
 ';
 
     my $parser = XML::LibXML.new;
-    $parser.validate = 1;
+    $parser.validate: 1;
 
     $parser.parse( $badxml );
     #~ # correct line number may or may not be present
     #~ # depending on libxml2 version
     #~ like($@,  qr/^:[03]:/, "line 03 found in error" );
 
-    $parser.linenumbers = 1;
+    $parser.linenumbers: 1;
     $parser.parse( $badxml );
     #~ like($@, qr/^:3:/, "line 3 found in error");
 
     # switch off validation for the following tests
-    $parser.validate = 0;
+    $parser.validate: 0;
 
     my $doc = $parser.parse( $goodxml );
 
@@ -660,7 +665,7 @@ my $badXInclude = '
     my $newkid = $root.appendChild( $doc.createElement( "bar" ) );
     is $newkid.line, 0, "line number is 0";
 
-    $parser.linenumbers = 0;
+    $parser.linenumbers: 0;
     $doc = $parser.parse( $goodxml );
 
     $root = $doc.documentElement;
@@ -880,6 +885,10 @@ sub test-good-and-bad-strings($parser, $name) {
     subtest {
         for flat @goodWFStrings, @goodWFNSStrings, @goodWFDTDStrings -> $str {
             my $doc = $parser.parse($str);
+            # cw: The parser now returns the raw struct type, not a proper
+            # object. That part of the redesign has not been completed, yet.
+            #
+            #isa-ok($doc, XML::LibXML::Document);
             isa-ok($doc, XML::LibXML::Document);
         }
 

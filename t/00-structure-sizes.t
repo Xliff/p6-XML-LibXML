@@ -4,7 +4,7 @@ use NativeCall;
 use Test;
 use XML::LibXML::CStructs :types;
 
-plan 19;
+plan 20;
 
 compile_test_lib('00-structure-sizes');
 
@@ -25,7 +25,7 @@ for xmlAttr,
     xmlParserMode,
     xmlParserNodeInfo,
     xmlParserNodeInfoSeq,
-    xmlSAXHandler,
+    #xmlSAXHandler,
     xmlValidCtxt,
     xmlXPathContext,
     xmlXPathObject

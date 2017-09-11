@@ -115,6 +115,8 @@ my class xmlDoc is export(:types) {
     has int32       $.parseFlags;
     #~ intproperties: set of xmlDocProperties for this docume
     has int32       $.properties;
+
+    #method elems {}
 }
 
 my class xmlError is export(:types) {
@@ -249,8 +251,8 @@ my class xmlValidCtxt is export(:types) {
 }
 
 my class xmlSAXHandler is export(:types) {
-    #~ internalSubsetSAXFunc internalSubset;
-    #~ isStandaloneSAXFunc isStandalone;
+    #~ HAS internalSubsetSAXFunc internalSubset;
+    #~ HAS isStandaloneSAXFunc isStandalone;
     #~ hasInternalSubsetSAXFunc hasInternalSubset;
     #~ hasExternalSubsetSAXFunc hasExternalSubset;
     #~ resolveEntitySAXFunc resolveEntity;
@@ -283,6 +285,7 @@ my class xmlSAXHandler is export(:types) {
     #~ endElementNsSAX2Func endElementNs;
     #~ xmlStructuredErrorFunc serror;
 }
+
 my class xmlParserCtxt is export(:types) {
     has xmlSAXHandler                  $.sax; # The SAX handler
     has OpaquePointer             $.userData; # For SAX interface only, used by DOM build
