@@ -16,43 +16,6 @@ submethod BUILD {
 	$!parser = XML::LibXML::Parser.new;
 }
 
-# Parser pass-through options.
-multi method keep-blanks(Bool $b) {
-	$!parser.setFlags(XML_PARSE_NOBLANKS, :on(!$b))
-}
-multi method keep-blanks(Int $i where 1 | 0) {
-	$!parser.setFlags(XML_PARSE_NOBLANKS, :on(!$i));
-}
-
-multi method validate(Bool $b) {
-	$!parser.setFlags(XML_PARSE_DTDVALID, :on($b));
-}
-multi method validate(Int $i where 1 | 0) {
-	$!parser.setFlags(XML_PARSE_DTDVALID, :on($i));
-}
-
-multi method linenumbers(Bool $b) {
-	$!parser.linenumbers = $b ?? 1 !! 0;
-}
-multi method linenumbers(Int $i where 1 | 0) {
-	$!parser.linenumbers = $i;
-}
-
-multi method pedantic(Bool $b) {
-	$!parser.setFlags(XML_PARSE_PEDANTIC, :on($b));
-}
-multi method pedantic(Int $i where 1 | 0) {
-	$!parser.setFlags(XML_PARSE_PEDANTIC, :on($i));
-}
-
-multi method replace-entities(Bool $b) {
-	$!parser.replace-entities = $b ?? 1 !! 0;
-}
-multi method replace-entities(Int $i where 1 | 0) {
-	$!parser.replace-entities = $i;
-}
-
-
 method parser-version() {
     my $ver = cglobal('xml2', 'xmlParserVersion', Str);
     Version.new($ver.match(/ (.)? (..)+ $/).list.join: '.')

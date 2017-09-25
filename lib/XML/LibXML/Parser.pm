@@ -34,10 +34,8 @@ sub htmlNewParserCtxt                                    returns XML::LibXML::Pa
 sub setOptions($ctxt, $flags, $html) {
     my $myflags = $flags;
     unless $myflags +& XML_PARSE_DTDLOAD {
-        # cw: unset bit op?
-        $myflags = $myflags +& (
-            0xffffffff +^
-            (XML_PARSE_DTDVALID + XML_PARSE_DTDATTR + XML_PARSE_NOENT)
+        $myflags = $myflags +^ (
+            (XML_PARSE_DTDVALID +| XML_PARSE_DTDATTR +| XML_PARSE_NOENT)
         );
         xmlKeepBlanksDefault($myflags +& XML_PARSE_NOBLANKS ?? 1 !! 0);
 
@@ -61,14 +59,14 @@ method new(:$html = False, :$flags) {
       nativecast(Pointer, $self),
       -> OpaquePointer, OpaquePointer { }
     );
-    if $flags.defined {
-        setOptions($self, $flags, $html);
-    }
+    setOptions($self, $flags, $html) if $flags.defined;
+        ;
     $self;
 }
 
 method setFlags($flags, :$on = 1, :$off = 0) {
-  die "Confusing on/off parameters" unless $on.Bool != $off.Bool;
+  die "Confusing on/off parameters"
+    if [&&]($on.defined, $off.define, $on.Bool == $off.Bool);
   die "Invalid mask specified {$flags}"
     if $flags > (+XML_PARSE_BIG_LINES * 2 - 1);
 	setOptions(
@@ -84,41 +82,43 @@ method setOptions(Int $options) {
 
 # Parser pass-through options.
 method keep-blanks(Bool $b)
-  is aka<keep_blanks>
+#  is aka<keep_blanks>
 {
-	setFlags(XML_PARSE_NOBLANKS, :on(!$b))
+	.setFlags(XML_PARSE_NOBLANKS, :on(!$b))
 }
 
 method pedantic(Bool $b)
-  is aka<pedantic_parser>
+#  is aka<pedantic_parser>
 {
-	setFlags(XML_PARSE_PEDANTIC, :on($b));
+	.setFlags(XML_PARSE_PEDANTIC, :on($b));
 }
 
 method validate(Bool $b)
-  is aka<validation>
+#  is aka<validation>
 {
-	setFlags(XML_PARSE_DTDVALID, :on($b));
+	.setFlags(XML_PARSE_DTDVALID, :on($b));
 }
 
 method expand-entities(Bool $b)
-  is aka<expand_entities>
+#  is aka<expand_entities>
 {
-  setFlags(XML_PARSE_NOENT, :on($b));
+  .setFlags(XML_PARSE_NOENT, :on($b));
 }
 
 method recover(Bool $b) {
-  setFlags(XML_PARSE_RECOVER, :on($b));
+  .setFlags(XML_PARSE_RECOVER, :on($b));
 }
 
-multi method linenumbers is rw is aka<line_numbers> {
+multi method linenumbers is rw
+  #is aka<line_numbers>
+{
   Proxy.new(
-    FETCH => method       { return $!linnumbers  },
-    STORE => method($new) { $!linenumbers = $new }
+    FETCH => -> $        { return $.linenumbers  },
+    STORE => -> $, $new  { $.linenumbers = $new }
   );
 }
 multi method linenumbers(Int $i where 1 | 0) {
-	$!linenumbers = +$i;
+	$.linenumbers = +$i;
 }
 
 method parse(Str:D $str, Str :$uri, :$flags) {
