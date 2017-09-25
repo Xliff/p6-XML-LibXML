@@ -174,7 +174,7 @@ $parser.pedantic: 0;
     #~ say $docA[0][0].Str(:!format);
     #~ say $docA[0][0].Str(:format);
     #~ say "" for ^5;
-    is ~$docA, $tstr, "xml string round trips as expected";
+    is $docA.Str, $tstr, "xml string round trips as expected";
     is $docA.Str(:skip-xml-declaration), $tstr, "xml string round trips as expected";
     #~ is ~$docA, $tstr, "xml string round trips as expected";
     #~ is ~$docB, $tstr, "test3.xml round trips as expected";
@@ -640,19 +640,19 @@ my $badXInclude = '
 ';
 
     my $parser = XML::LibXML.new;
-    $parser.validate: 1;
+    #$parser.validate: 1;
 
-    $parser.parse( $badxml );
+    #$parser.parse( $badxml );
     #~ # correct line number may or may not be present
     #~ # depending on libxml2 version
     #~ like($@,  qr/^:[03]:/, "line 03 found in error" );
 
     $parser.linenumbers: 1;
-    $parser.parse( $badxml );
+    #$parser.parse( $badxml );
     #~ like($@, qr/^:3:/, "line 3 found in error");
 
     # switch off validation for the following tests
-    $parser.validate: 0;
+    #$parser.validate: 0;
 
     my $doc = $parser.parse( $goodxml );
 

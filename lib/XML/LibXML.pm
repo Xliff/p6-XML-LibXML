@@ -18,17 +18,17 @@ submethod BUILD {
 
 # Parser pass-through options.
 multi method keep-blanks(Bool $b) {
-	$!parser.keep-blanks = $b ?? 1 !! 0;
+	$!parser.setFlags(XML_PARSE_NOBLANKS, :on(!$b))
 }
 multi method keep-blanks(Int $i where 1 | 0) {
-	$!parser.keep-blanks = $i;
+	$!parser.setFlags(XML_PARSE_NOBLANKS, :on(!$i));
 }
 
 multi method validate(Bool $b) {
-	$!parser.validate = $b ?? 1 !! 0;
+	$!parser.setFlags(XML_PARSE_DTDVALID, :on($b));
 }
 multi method validate(Int $i where 1 | 0) {
-	$!parser.validate = $i;
+	$!parser.setFlags(XML_PARSE_DTDVALID, :on($i));
 }
 
 multi method linenumbers(Bool $b) {
@@ -39,10 +39,10 @@ multi method linenumbers(Int $i where 1 | 0) {
 }
 
 multi method pedantic(Bool $b) {
-	$!parser.pedantic = $b ?? 1 !! 0;
+	$!parser.setFlags(XML_PARSE_PEDANTIC, :on($b));
 }
 multi method pedantic(Int $i where 1 | 0) {
-	$!parser.pedantic = $i;
+	$!parser.setFlags(XML_PARSE_PEDANTIC, :on($i));
 }
 
 multi method replace-entities(Bool $b) {
@@ -58,8 +58,8 @@ method parser-version() {
     Version.new($ver.match(/ (.)? (..)+ $/).list.join: '.')
 }
 
-method parse(Str $data) {
-	my $r = $!parser.parse($data, flags => 0);
+method parse(Str $data, :$flags) {
+	my $r = $!parser.parse($data, :$flags);
 	# Without the assignment, nativecast() gets a P6Opaque.
 	($r ~~ xmlDoc) ?? nativecast(XML::LibXML::Document, $r) !! $r;
 }

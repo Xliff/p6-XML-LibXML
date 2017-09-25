@@ -2,6 +2,7 @@ use v6;
 use nqp;
 use NativeCall;
 
+use XML::LibXML::Globals;
 use XML::LibXML::CStructs :types;
 use XML::LibXML::C14N;
 use XML::LibXML::Subs;
@@ -66,6 +67,9 @@ method process-xincludes {
 # Objects that implement the Document interface have all properties and functions of the Node interface as well as the properties and functions defined below.
 
 ## Properties of objects that implement the Document interface:
+
+# cw: Do we need STORE methods for the Proxy objects, if they are truly read-only?
+#     If the answer is ro, then do we really need the Proxy objects at all?
 
 #| This read-only property is an object that implements the DocumentType interface.
 method doctype is aka<type> {
@@ -252,13 +256,18 @@ method base-uri() {
     }
 
     multi method Str(:$format = 0) {
-        my $result = CArray[Str].new();
-        my $len    = CArray[int32].new();
-        $result[0] = "";
-        $len[0]    = 0;
-        #~ xmlDocDumpMemory(self, $result, $len);
-        xmlDocDumpFormatMemory(self, $result, $len, $format);
-        $result[0]
+        my $ret;
+
+        for self.childNodes -> $n {
+          next if [&&](
+            $n.type == XML_DTD_NODE,
+            $XML::LibXML::Globals::skipDTD,
+            $XML::LibXML::Globals::skipXMLDeclaration
+          );
+          # cw: Returning (Any)
+          $ret ~= $n.Str(:$format);
+        }
+        $ret;
     }
 
     #~ multi method Str(:$skip-xml-declaration) {

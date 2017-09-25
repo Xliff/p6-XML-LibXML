@@ -6,6 +6,7 @@ use XML::LibXML::C14N;
 use XML::LibXML::CStructs :types;
 use XML::LibXML::Dom;
 use XML::LibXML::Enums;
+use XML::LibXML::Globals;
 use XML::LibXML::Subs;
 use XML::LibXML::XPath;
 
@@ -13,6 +14,7 @@ class XML::LibXML::Node is xmlNode is repr('CStruct') { ... }
 
 multi trait_mod:<is>(Routine $r, :$aka!) { $r.package.^add_method($aka, $r) };
 
+# cw: Will need a Nil check, and should probably be moved to ::Subs
 my &_nc = &nativecast;
 
 role XML::LibXML::Nodish does XML::LibXML::C14N {
@@ -93,7 +95,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             when Pair {
                 $ctxt.register-namespace($_.key, $_.value);
             }
-                
+
             when List {
                 # If the first element is not a list, then assume it is
                 # a namespace definition.
@@ -105,7 +107,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
                     when List {
                         for $ns_list -> $ns_def {
                             given $ns_def {
-                                $ctxt.register-namespace($_[0], $_[1]) 
+                                $ctxt.register-namespace($_[0], $_[1])
                                     when Array;
 
                                 $ctxt.register-namespace($_.key, $_.value)
@@ -113,7 +115,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
                                 $ctxt.register_namespace(
                                     $_<namespace>, $_<uri>
-                                ) when Hash;    
+                                ) when Hash;
                             }
                         }
                     }
@@ -138,13 +140,13 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         if $opts.defined {
             # cw: Process any other options we may need to hack
             #     libxml back into shape.
-            self!regns($ctxt, $opts<namespaces>) 
+            self!regns($ctxt, $opts<namespaces>)
                 if $opts<namespaces>.defined;
         }
 
         my $comp = xmlXPathCompile($xpath);
-        die "Invalid XPath expression '{$xpath}'" 
-            unless $comp.defined; 
+        die "Invalid XPath expression '{$xpath}'"
+            unless $comp.defined;
 
         my $res = xmlXPathCompiledEval($comp, $ctxt);
         return unless $res.defined;
@@ -214,18 +216,53 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         $buffer.value;
     }
 
-    method toString 
-        is aka<to_literal>
-        is aka<textContent>
-        is aka<string_value>
-    {
-        # cw: Must use libxml2 to properly decode entities!
-        sub xmlXPathCastNodeToString(xmlNode)   returns Str   is native('xml2') { * }
-        sub xmlSubstituteEntitiesDefault(int32) returns int32 is native('xml2') { * }
+    # cw: There is a difference between this method of string conversion and
+    # what is expected by the Perl5 version of this module. We may want to
+    # rename this routine and let the Perl5 behavior become the fault.
+    #
+    # Will revisit this issue when we get past t/12html.t
+    #method toString
+    #    is aka<to_literal>
+    #    is aka<textContent>
+    #    is aka<string_value>
+    #{
+    #    # cw: Must use libxml2 to properly decode entities!
+    #    sub xmlXPathCastNodeToString(xmlNode)   returns Str   is native('xml2') { * }
+    #    sub xmlSubstituteEntitiesDefault(int32) returns int32 is native('xml2') { * }
+    #
+    #    my $old = xmlSubstituteEntitiesDefault(0);
+    #    xmlXPathCastNodeToString(self.getNode);
+    #}
 
-        my $old = xmlSubstituteEntitiesDefault(0);
-        xmlXPathCastNodeToString(self.getNode);
+    multi method toString($format, $useDomEncoding) {
+      self.toString(:$format, :$useDomEncoding);
     }
+
+    multi method toString(:$format = 0, :$useDomEncoding)
+      is aka<serialize>
+    {
+      my $ret;
+      my $buffer = xmlBufferCreate;
+      my $t_empty_var = $XML::LibXML::Globals::xmlSaveNoEmptyTags;
+      $XML::LibXML::Globals::xmlSaveNoEmptyTags = $XML::LibXML::Globals::setTagCompression;
+      if $format <= 0 {
+        xmlNodeDump($buffer, self.doc, self, 0, $format);
+      } else {
+          my $t_indent_var = $XML::LibXML::Globals::xmlIndentTreeOutput;
+          $XML::LibXML::Globals::xmlIndentTreeOutput = 1;
+          xmlNodeDump($buffer, self.doc, self, 0, $format);
+          $XML::LibXML::Globals::xmlIndentTreeOutput = $t_indent_var;
+      }
+      $XML::LibXML::Globals::xmlSaveNoEmptyTags = $t_empty_var;
+      $ret = xmlBufferContent($buffer);
+
+      # See P5's LibXML.xs for more error handling code if the string is not
+      # properly converted, above.
+      xmlBufferFree($buffer);
+      warn "Unable to convert XML buffer to string" unless $ret;
+      $ret;
+    }
+
 
     method parentNode() {
         return self.parent;
@@ -238,8 +275,8 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         #xmlNodeSetName(self, $n);
 
         if testNodeName($n) {
-            xmlNodeSetName(self.getNode(), $n);        
-        } 
+            xmlNodeSetName(self.getNode(), $n);
+        }
         else {
             die "Bad name";
         }
@@ -249,11 +286,11 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         sub xmlSetProp(xmlNode, Str, Str)       is native('xml2') { * }
 
         if testNodeName($a) {
-            # cw: Note, this method locks us into libxml2 versions of 2.6.21 and 
-            #     later. libxml2 does -not- provide us a mechanism to test and 
+            # cw: Note, this method locks us into libxml2 versions of 2.6.21 and
+            #     later. libxml2 does -not- provide us a mechanism to test and
             #     implement backwards compatibility.
             xmlSetProp(self.getNode, $a, $v);
-        } 
+        }
         else {
             die "Bad name '$a'";
         }
@@ -262,7 +299,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
     method setAttributeNS(Str $namespace, Str $name, Str $val) {
         if !testNodeName($name) {
             die "Bad name '$name'";
-            # cw: Yes, I know this looks weird, but is done incase we 
+            # cw: Yes, I know this looks weird, but is done incase we
             #     .return from a CATCH{}
             return;
         }
@@ -273,7 +310,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             $localname = $prefix;
             $prefix = Str;
         }
- 
+
         my xmlNs $ns;
         my $attr_ns;
         if $namespace.defined {
@@ -307,7 +344,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
                         $ns = xmlNewNs(
                             self.getNode(), $attr_ns, $attr_p
                         );
-                    } 
+                    }
                     else {
                         $ns = xmlNs;
                     }
@@ -317,7 +354,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
         if $attr_ns.defined && $attr_ns.chars && ! $ns.defined {
             die "bad ns attribute!";
-            return            
+            return
         }
 
         xmlSetNsProp(self.getNode(), $ns, $localname, $val);
@@ -325,7 +362,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
 
     method hasAttribute($a) {
         my $ret = domGetAttrNode(self.getNode(), $a);
-        
+
         # cw: If we want to use xmlFree() then we might need to adopt this
         #     pattern for all unused values we get from libxml2
         my $retVal = $ret ?? True !! False;
@@ -409,7 +446,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         else {
             my $node = self.getNode();
             $ret = $uri.defined && $uri.chars ??
-                xmlGetNsProp($node, $name, $uri) 
+                xmlGetNsProp($node, $name, $uri)
                 !!
                 xmlGetProp($node, $name);
         }
@@ -450,7 +487,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         #    PmmOWNERPO(PmmPROXYNODE(self))
         #);
 
-        return $ret.defined ?? 
+        return $ret.defined ??
             $ret.type == XML_ATTRIBUTE_NODE ??
                 $ret !! Nil
             !! Nil;
@@ -475,15 +512,15 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         );
         if $ret {
             return unless $ret !=:= $an;
-            
+
             xmlReplaceNode(
-                _nc(xmlNode, $ret), 
+                _nc(xmlNode, $ret),
                 _nc(xmlNode, $an)
             );
-        } 
+        }
         else {
             xmlAddChild(
-                self.getNodePtr, 
+                self.getNodePtr,
                 $an.getAttrPtr
             );
         }
@@ -517,7 +554,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         #my xmlNs $ns = $an.ns;
         my $ns = $an.ns;
         my $ret = xmlHasNsProp(
-            self, 
+            self,
             $ns.defined ?? $ns.uri !! Str,
             $an.localname
         );
@@ -525,10 +562,10 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         if $ret.defined && $ret.type == XML_ATTRIBUTE_NODE {
             return if $ret =:= $an;
             xmlReplaceNode($ret, $an);
-        } 
+        }
         else {
             xmlAddChild(
-                self.getNodePtr, 
+                self.getNodePtr,
                 $an.getNodePtr
             );
             xmlReconciliateNs(self.doc, self);
@@ -549,7 +586,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             return;
         }
 
-        return unless 
+        return unless
             $an.type == XML_ATTRIBUTE_NODE
             &&
             $an.parent !=:= self;
@@ -575,13 +612,13 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         my xmlAttr $xattr = xmlHasNsProp(
             self.getNode(), $name, $nsUri
         );
-        xmlUnlinkNode($xattr.getNodePtr) 
+        xmlUnlinkNode($xattr.getNodePtr)
             if $xattr.defined && $xattr.type == XML_ATTRIBUTE_NODE;
 
         if ($xattr.defined && $xattr._private.defined) {
             # cw: ???? XS code
             # PmmFixOwner((ProxyNodePtr)xattr->_private, NULL);
-        } 
+        }
         else {
             xmlFreeProp($xattr.getAttrPtr);
         }
@@ -598,7 +635,7 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             } elsif $flag {
                 xmlSetNs(self.getNode(), xmlNs);
                 $ret = 1;
-            } 
+            }
             else {
                 $ret = 0;
             }
@@ -608,15 +645,15 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
             if ($ns.defined) {
                 if $ns.uri eq $_uri {
                     $ret = 1;
-                } 
+                }
                 else {
                     $ns = xmlNewNs(self.getNode(), $_uri, $_prefix);
                 }
-            } 
+            }
             else {
                 $ns = xmlNewNs(self.getNode(), $_uri, $_prefix);
             }
-            
+
             $ret = $ns.defined;
         }
 
@@ -625,21 +662,21 @@ role XML::LibXML::Nodish does XML::LibXML::C14N {
         $ret;
     }
 
-    method setData($value) 
+    method setData($value)
         is aka<setValue>
         is aka<_setData>
     {
         domSetNodeValue(self.getNode(), $value);
     }
 
-    method nodeValue() 
+    method nodeValue()
         is aka<getValue>
         is aka<getData>
     {
         domGetNodeValue(self);
     }
 
-    method unbindNode() 
+    method unbindNode()
         is aka<unlink>
         is aka<unlinkNode>
     {
@@ -668,7 +705,7 @@ class XML::LibXML::Node does XML::LibXML::Nodish {
     method name() {
         self._name();
     }
-    
+
     #~ multi method Str() {
         #~ my $result = CArray[Str].new();
         #~ my $len    = CArray[int32].new();
@@ -686,4 +723,3 @@ class XML::LibXML::Node does XML::LibXML::Nodish {
     #~ }
 
 }
-

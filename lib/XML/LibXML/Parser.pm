@@ -3,6 +3,7 @@ use v6;
 use nqp;
 
 use NativeCall;
+use XML::LibXML::Globals;
 use XML::LibXML::CStructs :types;
 
 multi trait_mod:<is>(Routine $r, :$aka!) { $r.package.^add_method($aka, $r) };
@@ -66,19 +67,67 @@ method new(:$html = False, :$flags) {
     $self;
 }
 
+method setFlags($flags, :$on = 1, :$off = 0) {
+  die "Confusing on/off parameters" unless $on.Bool != $off.Bool;
+  die "Invalid mask specified {$flags}"
+    if $flags > (+XML_PARSE_BIG_LINES * 2 - 1);
+	setOptions(
+		($off || !$on) ?? $.options +& +^$flags !! $.options +| $flags
+	);
+}
+
 method setOptions(Int $options) {
     die "Invalid options specified {$options}"
         if $options > (+XML_PARSE_BIG_LINES * 2 - 1);
     &setOptions(self, $options, self.html);
 }
 
-method parse(Str:D $str, Str :$uri, :$_flags) {
-    my $flags = $_flags.defined ?? $_flags
+# Parser pass-through options.
+method keep-blanks(Bool $b)
+  is aka<keep_blanks>
+{
+	setFlags(XML_PARSE_NOBLANKS, :on(!$b))
+}
+
+method pedantic(Bool $b)
+  is aka<pedantic_parser>
+{
+	setFlags(XML_PARSE_PEDANTIC, :on($b));
+}
+
+method validate(Bool $b)
+  is aka<validation>
+{
+	setFlags(XML_PARSE_DTDVALID, :on($b));
+}
+
+method expand-entities(Bool $b)
+  is aka<expand_entities>
+{
+  setFlags(XML_PARSE_NOENT, :on($b));
+}
+
+method recover(Bool $b) {
+  setFlags(XML_PARSE_RECOVER, :on($b));
+}
+
+multi method linenumbers is rw is aka<line_numbers> {
+  Proxy.new(
+    FETCH => method       { return $!linnumbers  },
+    STORE => method($new) { $!linenumbers = $new }
+  );
+}
+multi method linenumbers(Int $i where 1 | 0) {
+	$!linenumbers = +$i;
+}
+
+method parse(Str:D $str, Str :$uri, :$flags) {
+    my $useFlags = $flags.defined ?? $flags
         !! self.html == 1 ?? HTML_PARSE_RECOVER + HTML_PARSE_NOBLANKS !! 0;
 
     my $doc = self.html == 1
-            ?? htmlCtxtReadDoc(self, $str, $uri, Str, +$flags)
-            !! xmlCtxtReadDoc(self, $str, $uri, Str, +$flags);
+            ?? htmlCtxtReadDoc(self, $str, $uri, Str, +$useFlags)
+            !! xmlCtxtReadDoc(self, $str, $uri, Str, +$useFlags);
     fail XML::LibXML::Error.get-last(self, :orig($str)) unless $doc;
     $doc
 }
