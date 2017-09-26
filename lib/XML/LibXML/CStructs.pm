@@ -159,20 +159,20 @@ my class xmlDtd is export(:types) {
 }
 
 my class xmlElement is export(:types) {
-    has OpaquePointer $.private;  # application data
-    has int8             $.type;  # xmlElementType type number, must be second!
-    has Str              $.name;  # Element name
+    has OpaquePointer     $.private;  # application data
+    has int8                 $.type;  # xmlElementType type number, must be second!
+    has Str                  $.name;  # Element name
     has xmlNodePtr       $.children is rw; # the value of the property
     has xmlNodePtr           $.last is rw; # NULL
     has xmlNodePtr         $.parent is rw; # child->parent link
     has xmlAttrPtr           $.next is rw; # next sibling link
     has xmlAttrPtr           $.prev is rw; # previous sibling link
-    has xmlDoc              $.doc; # autoreference to itself End of common p
-    has int8              $.etype; # The type
-    has OpaquePointer   $.content; # The allowed element content
-    has xmlAttrPtr   $.attributes; # List of declared attributes
-    has Str              $.prefix;
-    has OpaquePointer $.contModel; # The validating regexp.
+    has xmlDoc                $.doc; # autoreference to itself End of common p
+    has int8                 $.etype; # The type
+    has OpaquePointer      $.content; # The allowed element content
+    has xmlAttrPtr      $.attributes; # List of declared attributes
+    has Str                 $.prefix;
+    has OpaquePointer    $.contModel; # The validating regexp.
 
     #method setName(xmlElement:D: $name) {
     #    $!name = $name;

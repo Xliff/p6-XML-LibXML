@@ -69,11 +69,10 @@ method setFlags($flags, :$on, :$off) {
     if [&&]($on.defined, $off.defined, $on.Bool == $off.Bool);
   die "Invalid mask specified {$flags}"
     if $flags > (+XML_PARSE_BIG_LINES * 2 - 1);
-  # cw: How can we deteremine $html parameter if not tracked by object?
 	setOptions(
     self,
 		($off || !$on) ?? $.options +& +^$flags !! $.options +| $flags,
-    1
+    self.html
 	);
 }
 
@@ -117,22 +116,40 @@ method recover(Int $b where 1 | 0) {
   self.setFlags(XML_PARSE_RECOVER, :on($b));
 }
 
-multi method linenumbers is rw
-  #is aka<line_numbers>
-{
+method linenumbers is rw {
+  # cw: Don't know if this is necessary. This is the same behavior as if
+  #     the inbuilt helper method was used, however $!linenumbers is still
+  #     set by the parse() method.
   Proxy.new(
-    FETCH => -> $        { return $.linenumbers  },
-    STORE => -> $, $new  { $.linenumbers = $new }
+    FETCH => -> $ {
+      nqp::p6box_i(
+        nqp::getattr_i(nqp::decont(self), xmlParserCtxt, '$!linenumbers')
+      );
+    },
+    STORE => -> $, $new {
+      nqp::bindattr_i(
+          nqp::decont(self),
+          xmlParserCtxt,
+          '$!linenumbers',
+          $new
+      );
+    }
   );
-}
-multi method linenumbers(Int $i where 1 | 0) {
-	$.linenumbers = +$i;
 }
 
 method parse(Str:D $str, Str :$uri, :$flags) {
-    my $useFlags = $flags.defined ?? $flags
-        !! self.html == 1 ?? HTML_PARSE_RECOVER + HTML_PARSE_NOBLANKS !! 0;
+    my $useFlags = $flags.defined ??
+      $flags !!
+      self.html == 1 ?? HTML_PARSE_RECOVER + HTML_PARSE_NOBLANKS !! 0;
 
+    # cw: The below methods used to parse the XMl/HTML files will notations
+    #     will not respect $.linenumbers.
+    #
+    #     In the case of XML documents, we will need to use xmlCreateMemoryParserCtxt
+    #     and then xmlParseDoc to properly emulate the results expected by the Perl5
+    #     version. This also means that $flags handling will be different, as well.
+    #
+    #     Another alternative is the use of a multi method that takes just $str and $uri.
     my $doc = self.html == 1
             ?? htmlCtxtReadDoc(self, $str, $uri, Str, +$useFlags)
             !! xmlCtxtReadDoc(self, $str, $uri, Str, +$useFlags);
@@ -147,7 +164,7 @@ method parse-string($str, :$url, :$flags) {
     return unless $str.defined && $str.trim.chars;
 
     my $myurl   = $url.defined   ??  $url   !! Str;
-    my $myflags = $flags.defined ?? +$flags !! 0;
+    my $myflags = $flags.defined ?? +$flags !! self.options;
 
     # cw: -YYY- Not worring about encoding at this time.
     my $ret = xmlReadDoc($str, $url, Str, $myflags);

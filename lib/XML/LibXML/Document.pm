@@ -86,7 +86,7 @@ method documentElement
 {
     Proxy.new(
         FETCH => -> $ {
-            nativecast(XML::LibXML::Element, xmlDocGetRootElement(self))
+            nativecast(XML::LibXML::Node, xmlDocGetRootElement(self))
         },
         STORE => -> $, $new {
             my $root = xmlDocGetRootElement(self);

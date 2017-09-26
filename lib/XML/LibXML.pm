@@ -28,6 +28,11 @@ method pedantic($b) {
 	$!parser.pedantic(+$b);
 }
 
+method linenumbers($b?) {
+	return $!parser.linenumbers unless $b.defined;
+	$!parser.linenumbers = +$b;
+}
+
 method parser-version() {
     my $ver = cglobal('xml2', 'xmlParserVersion', Str);
     Version.new($ver.match(/ (.)? (..)+ $/).list.join: '.')

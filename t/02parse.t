@@ -209,6 +209,7 @@ my $badXInclude = '
 
     $doc = $parser.parse( $badXInclude );
     $doc.process-xincludes;
+
     #~ $i= undef;
     #~ eval { $i = $parser->processXIncludes($doc); };
     #~ like($@, qr/$badfile1:3: parser error : Extra content at the end of the document/, "error parsing a bad include");
@@ -642,6 +643,7 @@ my $badXInclude = '
     #~ like($@,  qr/^:[03]:/, "line 03 found in error" );
 
     $parser.linenumbers: 1;
+
     #$parser.parse( $badxml );
     #~ like($@, qr/^:3:/, "line 3 found in error");
 
@@ -649,24 +651,25 @@ my $badXInclude = '
     #$parser.validate: 0;
 
     my $doc = $parser.parse( $goodxml );
-
     my $root = $doc.documentElement;
     is $root.line, 2, "line number is 2";
 
     my @kids = $root.childNodes;
-    is @kids[1].?line, 3, "line number is 3";
+    is @kids[1].line, 3, "line number is 3";
 
     my $newkid = $root.appendChild( $doc.createElement( "bar" ) );
     is $newkid.line, 0, "line number is 0";
 
     $parser.linenumbers: 0;
+    diag $parser.linenumbers;
     $doc = $parser.parse( $goodxml );
+    diag $parser.linenumbers;
 
     $root = $doc.documentElement;
     is $root.line, 0, "line number is 0";
 
     @kids = $root.childNodes;
-    is @kids[1].?line, 0, "line number is 0";
+    is @kids[1].line, 0, "line number is 0";
 }
 
 #~ SKIP: {
