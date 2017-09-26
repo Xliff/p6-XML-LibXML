@@ -119,13 +119,7 @@ my $goodfile = "example/dromeds.xml";
 my $badfile1 = "example/bad.xml";
 my $badfile2 = "does_not_exist.xml";
 
-
-#~ use NativeCall;
-#~ sub xmlKeepBlanksDefault(int32)              returns int32      is native('libxml2') is export { * }
-#~ xmlKeepBlanksDefault(0);
 my $parser = XML::LibXML.new();
-#~ say $parser.keep-blanks;
-#~ exit;
 
 # 1 NON VALIDATING PARSER
 # 1.1 WELL FORMED STRING PARSING

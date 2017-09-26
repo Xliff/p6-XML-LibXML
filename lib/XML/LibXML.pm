@@ -16,6 +16,18 @@ submethod BUILD {
 	$!parser = XML::LibXML::Parser.new;
 }
 
+method keep-blanks($b) {
+	$!parser.keep-blanks(+$b);
+}
+
+method replace-entities($b) {
+	$!parser.replace-entities(+$b);
+}
+
+method pedantic($b) {
+	$!parser.pedantic(+$b);
+}
+
 method parser-version() {
     my $ver = cglobal('xml2', 'xmlParserVersion', Str);
     Version.new($ver.match(/ (.)? (..)+ $/).list.join: '.')

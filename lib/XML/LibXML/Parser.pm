@@ -64,13 +64,16 @@ method new(:$html = False, :$flags) {
     $self;
 }
 
-method setFlags($flags, :$on = 1, :$off = 0) {
+method setFlags($flags, :$on, :$off) {
   die "Confusing on/off parameters"
-    if [&&]($on.defined, $off.define, $on.Bool == $off.Bool);
+    if [&&]($on.defined, $off.defined, $on.Bool == $off.Bool);
   die "Invalid mask specified {$flags}"
     if $flags > (+XML_PARSE_BIG_LINES * 2 - 1);
+  # cw: How can we deteremine $html parameter if not tracked by object?
 	setOptions(
-		($off || !$on) ?? $.options +& +^$flags !! $.options +| $flags
+    self,
+		($off || !$on) ?? $.options +& +^$flags !! $.options +| $flags,
+    1
 	);
 }
 
@@ -81,32 +84,37 @@ method setOptions(Int $options) {
 }
 
 # Parser pass-through options.
-method keep-blanks(Bool $b)
+method keep-blanks(Int $b where 1 | 0)
 #  is aka<keep_blanks>
 {
-	.setFlags(XML_PARSE_NOBLANKS, :on(!$b))
+	self.setFlags(XML_PARSE_NOBLANKS, :on(!$b))
 }
 
-method pedantic(Bool $b)
+method pedantic(Int $b where 1 | 0)
 #  is aka<pedantic_parser>
 {
-	.setFlags(XML_PARSE_PEDANTIC, :on($b));
+	self.setFlags(XML_PARSE_PEDANTIC, :on($b));
 }
 
-method validate(Bool $b)
+method validate(Int $b where 1 | 0)
 #  is aka<validation>
 {
-	.setFlags(XML_PARSE_DTDVALID, :on($b));
+	self.setFlags(XML_PARSE_DTDVALID, :on($b));
 }
 
-method expand-entities(Bool $b)
+method expand-entities(Int $b where 1 | 0)
 #  is aka<expand_entities>
 {
-  .setFlags(XML_PARSE_NOENT, :on($b));
+  self.setFlags(XML_PARSE_NOENT, :on($b));
 }
 
-method recover(Bool $b) {
-  .setFlags(XML_PARSE_RECOVER, :on($b));
+multi method replace-entities(Int $b where 1 | 0)
+{
+  self.setFlags(XML_PARSE_NOENT, :on($b));
+}
+
+method recover(Int $b where 1 | 0) {
+  self.setFlags(XML_PARSE_RECOVER, :on($b));
 }
 
 multi method linenumbers is rw
